@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Error</title>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <form id="recordError" class="col s12" action="">
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">error</i>
+                        <textarea disabled id="recordError" class="materialize-textarea">An error has occured, check pacient/doctor card</textarea>
+                    </div>
+                </div>
+                <button class="btn waves-effect waves-light" style="float: center;" type="submit">Continue</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+        
+        // Need for updating labels when focused or when text is present
+        document.addEventListener('ready', function() {
+            M.updateTextFields();
+        });
+
+        const form = document.querySelector('form[id="recordError"]');
+        form.addEventListener('submit', submitForm);
+        
+        function submitForm(e) {
+            e.preventDefault();            
+            ipcRenderer.send('record:error');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add new medical record</title>
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--Import materialize.css-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <form id="addRecord" class="col s12" action="">
+                <div class="row">
+                    <div class="input-field col s12">
+                        <i class="material-icons prefix">mode_edit</i>
+                        <textarea id="newRecord" class="materialize-textarea" autofocus></textarea>
+                        <label for="newRecord">Diagnostic</label>
+                    </div>
+                </div>
+                <button class="btn waves-effect waves-light" style="float: right;" type="submit">Add reccord
+                    <i class="material-icons right">send</i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const electron = require('electron');
+        const {ipcRenderer} = electron;
+        
+        // Need for updating labels when focused or when text is present
+        document.addEventListener('ready', function() {
+            M.updateTextFields();
+        });
+
+        const form = document.querySelector('form[id="addRecord"]');
+        form.addEventListener('submit', submitForm);
+        
+        function submitForm(e) {
+            e.preventDefault();
+
+            const diagnostic = document.querySelector('#newRecord').value
+
+            record = sendToBackend(diagnostic)
+            
+            ipcRenderer.send('record:add', record);
+        }
+        
+        function sendToBackend(diagnostic) {
+            var xhr = new XMLHttpRequest()
+            var data = JSON.stringify({
+                "optype": 1,
+                "request": diagnostic
+            })
+            
+            // syncrounous as both backend and frontend will be local
+            xhr.open('POST', "http://localhost:8080/records", false);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.send(data)
+            return xhr.responseText
+        }
+    </script>
+</body>
+</html>

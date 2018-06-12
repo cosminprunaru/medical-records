@@ -1,0 +1,21 @@
+{
+  "name": "medical_records_ui",
+  "version": "1.0.0",
+  "description": "Blockchain medical records",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package-linux": "electron-packager . medical-records --overwrite --platform=linux --arch=x64 --prune=true --out=release-builds"
+  },
+  "author": "Prunaru Cosmin-Nicolae",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^2.0.2",
+    "electron-builder": "^20.15.1",
+    "electron-packager": "^12.1.0"
+  },
+  "dependencies": {
+    "load-json-file": "^5.0.0",
+    "request-json": "^0.6.3"
+  }
+}

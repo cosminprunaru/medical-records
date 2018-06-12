@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Medical Records</title>
+    <!--Import Google Icon Font-->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+    <!--Import materialize.css-->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0-beta/js/materialize.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.11.0.min.js"></script>
+</head>
+<body>
+    <nav class="nav-extended">
+        <div class="nav-wrapper">
+            <a class="brand-logo center">Medical Records</a>
+        </div>
+        <div class="nav-content">
+            <button class="btn-floating btn-large halfway-fab teal" onclick="addRecordFromMain()">
+                <i class="material-icons">add</i>
+            </button>
+        </div>
+    </nav>
+    <div class="row">
+        <div class="col s12">
+            <div class="row">
+                <form id="searchPacient" action="">
+                    <div class="input-field col s6 offset-s3">
+                        <i class="material-icons prefix">search</i>
+                        <input type="text" id="search-input" placeholder="Search by diagnostic ..." autofocus>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- List of records -->
+    <ul></ul>
+
+    <script>
+        const electron = require('electron')
+        const {ipcRenderer} = electron
+        const ul = document.querySelector('ul')
+        
+        const form = document.querySelector('form[id="searchPacient"]');
+        form.addEventListener('submit', searchPacient);
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            var elems = document.querySelectorAll('.collapsible');
+            var options = {}
+            var instances = M.Collapsible.init(elems, options);
+        });
+        
+        // take search item and submit form
+        function searchPacient(e) {
+            e.preventDefault()
+            const name = document.querySelector('#search-input').value
+            
+            recordsFound = searchPacientRecords(name)
+
+            ipcRenderer.send('record:search', recordsFound);
+            document.querySelector('#search-input').value = ''
+        }
+
+        // Send request for new record from button
+        function addRecordFromMain() {
+            ipcRenderer.send('record:addFromButton');
+        }
+
+        // Add record to view
+        ipcRenderer.on('record:add', function(e, record) {
+            ul.className = 'collapsible popout'
+            initCollapsible();
+            
+            const li = createCollapsibleLi(record)
+
+            ul.appendChild(li)
+        });
+
+        // unmarshalled records found
+        ipcRenderer.on('records:found', function(e, records) {
+            ul.className = ''
+            ul.innerHTML = ''
+
+            if (records.length != 0) {
+                ul.className = 'collapsible popout'
+                initCollapsible();
+                
+                var i;
+
+                for (i = 0; i < records.length; i++) {
+                    const li = createCollapsibleLi(records[i])
+                    ul.appendChild(li)
+                }
+            }
+        })
+
+        // Clear records from view
+        ipcRenderer.on('record:clear', function() {
+            ul.className = ''
+            ul.innerHTML = ''
+        })
+
+        function initCollapsible() {
+            var elems = document.querySelectorAll('.collapsible');
+            var options = {}
+            var instances = M.Collapsible.init(elems, options);
+        }
+
+        function createCollapsibleLi(record) {
+            
+            const header = createCollapsibleHeader(record)
+
+            const body = createCollapsibleBody(record)
+
+            const li = document.createElement('li')
+            li.className = 'avatar'
+            li.appendChild(header)
+            li.appendChild(body)
+            
+            return li
+        }
+
+        function createCollapsibleHeader(record) {
+            // Header that will collapse and contains limited data
+            const header = document.createElement('div')
+            header.className = 'collapsible-header'
+            
+            const icon = document.createElement('i')
+            icon.className = 'material-icons'
+            icon.innerText = 'description'
+            
+            const fullname = document.createTextNode(record.pacient.firstname + ' ' + record.pacient.lastname)
+            
+            const date = document.createTextNode('Examination date: ' + record.timestamp)
+            
+            header.appendChild(icon)
+            header.appendChild(fullname)
+            header.appendChild(document.createElement('br'))
+            header.appendChild(date)
+            
+            return header
+        }
+
+        function createCollapsibleBody(record) {
+            // Body which is collapsed and has all the data 
+            const body = document.createElement('div')
+            body.className = 'collapsible-body'
+                        
+            const mainRow = document.createElement('div')
+            mainRow.className = 'row'
+            
+            const dummyForm = document.createElement('form')
+            dummyForm.className = 'col s12'
+            
+            const firstRow = document.createElement('div')
+            firstRow.className = 'row'
+            
+            // start of Record ID
+            //const recordID = createRecordId(record.id)
+            const recordID = createListEntry(record.id, 1, 'recordID', 'Record ID:')
+            firstRow.appendChild(recordID)
+
+            // start of Pacient first name
+            const pacientFirstName = createListEntry(record.pacient.firstname, 2, 'pacientFirstName', 'Pacient first name:')
+            firstRow.appendChild(pacientFirstName)
+
+            // start of Pacient last name
+            const pacientLastName = createListEntry(record.pacient.lastname, 2, 'pacientLastName', 'Pacient last name:')
+            firstRow.appendChild(pacientLastName)
+
+            // start of Pacient CNP
+            const pacientCNP = createListEntry(record.pacient.cnp, 2, 'pacientCNP', 'CNP:')
+            firstRow.appendChild(pacientCNP)
+            
+            // start of Pacient phone number
+            const pacientPhone = createListEntry(record.pacient.phone, 2, 'pacientPhone', 'Pacient phone:')
+            firstRow.appendChild(pacientPhone)
+            
+            // add the first row
+            dummyForm.appendChild(firstRow)
+
+            const secondRow = document.createElement('div')
+            secondRow.className = 'row'
+            
+            // add doctor first name
+            const doctorFirstName = createListEntry(record.doctor.firstname, 2, 'doctorFirstName', 'Doctor first name:')
+            secondRow.appendChild(doctorFirstName)
+            
+            // add doctor last name
+            const doctorLastName = createListEntry(record.doctor.lastname, 2, 'doctorLastName', 'Doctor last name:')
+            secondRow.appendChild(doctorLastName)
+            
+            // add doctor type 
+            const doctorType = createListEntry(record.doctor.type, 2, 'doctorType', 'Doctor type:')
+            secondRow.appendChild(doctorType)
+
+            // add doctor email
+            const doctorEmail = createListEntry(record.doctor.email, 3, 'doctorEmail', 'Doctor email:')
+            secondRow.appendChild(doctorEmail)
+            
+            // add doctor phone
+            const doctorPhone = createListEntry(record.doctor.phone, 2, 'doctorPhone', 'Doctor phone:')
+            secondRow.appendChild(doctorPhone)
+            
+            // add the second row
+            dummyForm.appendChild(secondRow)    
+            
+            const thirdRow = document.createElement('div')
+            thirdRow.className = 'row'
+            
+            // add diagnostic
+            const diagnostic = createListEntry(record.payload, 12, 'diagnostic', 'Diagnostic:', true)
+            thirdRow.appendChild(diagnostic)
+            
+            // add the third row
+            dummyForm.appendChild(thirdRow)  
+            
+            mainRow.appendChild(dummyForm)
+            body.appendChild(mainRow)
+
+            return body
+        }
+        
+        // generic function for record data list entry 
+        function createListEntry(data, length, id, description, textarea = false) {
+            const div = document.createElement('div')
+            div.className = 'input-field col s' + length
+            
+            if (textarea) {
+                const textarea = document.createElement('textarea')
+                textarea.id = id
+                textarea.value = data
+                textarea.disabled = true
+                textarea.className = "materialize-textarea"
+                
+                // count the number of enters so we resize the textarea
+                var enters = function(x) {
+                    var h = 60, i
+                    
+                    for (i = 0; i < x.length; i++) {
+                        if (x[i] == '\n') {
+                            h += 16
+                        }
+                    }
+
+                    console.log(h)
+                    return h + "px;"
+                }
+
+                textarea.style = "height: " + enters(data)
+                div.appendChild(textarea)
+            } else {
+                const input = document.createElement('input')
+                input.id = id
+                input.value = data
+                input.disabled = true
+                div.appendChild(input)
+            }
+
+            const label = document.createElement('label')
+            label.htmlFor = id
+            label.className = 'active'
+            label.innerText = description
+
+            div.appendChild(label)
+            return div
+        }
+
+        function searchPacientRecords(name) {
+            var xhr = new XMLHttpRequest()
+            var data = JSON.stringify({
+                "optype": 2,
+                "request": name
+            })
+            
+            // syncrounous as both backend and frontend will be local
+            xhr.open('POST', "http://localhost:8080/records/search", false);
+            xhr.setRequestHeader("Content-Type", "application/json");
+
+            xhr.send(data)
+            return xhr.responseText
+        }
+    </script>    
+</body>
+</html>
