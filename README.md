@@ -18,3 +18,4 @@ For testing:
   - start the database
   - start the backend
   - start the frontend
+
